@@ -4,8 +4,10 @@
         <meta charset="UTF-8">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="theme-color" content="#000000">
+        <meta name="format-detection" content="telephone=no">
         <link rel="icon" href="icon/icon.png" type="image/png">
         <link rel="apple-touch-icon" href="icon/icon.png">
         <link rel="stylesheet" type="text/css" href="fonts/gamefont.css">
@@ -14,16 +16,41 @@
                 margin: 0;
                 padding: 0;
                 width: 100%;
-                height: 100vh;
-                height: 100dvh;
+                height: 100%;
                 overflow: hidden;
-                background-color: black;
+                background-color: #000;
+                overscroll-behavior: none;
                 touch-action: none;
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                user-select: none;
+                -webkit-tap-highlight-color: transparent;
             }
+            body { position: fixed; top: 0; left: 0; }
         </style>
         <title>Aloma</title>
     </head>
     <body>
+        <!-- A: errores, gestos y zoom -->
+        <script>
+            (function () {
+                window.__errores = [];
+                window.addEventListener('error', function (e) {
+                    var t = e.target;
+                    if (t && (t.src || t.href)) {
+                        window.__errores.push('NO CARGA: ' + (t.src || t.href).split('/').slice(-3).join('/'));
+                    } else {
+                        window.__errores.push((e.filename || '').split('/').pop() + ':' + e.lineno + ' ' + e.message);
+                    }
+                }, true);
+                ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (n) {
+                    document.addEventListener(n, function (e) { e.preventDefault(); });
+                });
+                document.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
+                document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+            })();
+        </script>
+
         <script type="text/javascript" src="js/libs/pixi.js"></script>
         <script type="text/javascript" src="js/libs/pixi-tilemap.js"></script>
         <script type="text/javascript" src="js/libs/pixi-picture.js"></script>
@@ -37,20 +64,68 @@
         <script type="text/javascript" src="js/rpg_sprites.js"></script>
         <script type="text/javascript" src="js/rpg_windows.js"></script>
         <script type="text/javascript" src="js/plugins.js"></script>
-        <script type="text/javascript" src="js/main.js"></script>
+
+        <!-- B: renderizador (cambia a true para forzar modo canvas) -->
         <script>
-            function fixAloma() {
-                if (window.Graphics && Graphics._onWindowResize) {
-                    Graphics._onWindowResize();
+            (function () {
+                var FORZAR_CANVAS = false;
+                if (FORZAR_CANVAS && window.SceneManager) {
+                    SceneManager.preferableRendererType = function () { return 'canvas'; };
                 }
-            }
-            window.addEventListener('load', function () {
-                setTimeout(fixAloma, 500);
-                setTimeout(fixAloma, 1500);
-            });
-            window.addEventListener('orientationchange', function () {
-                setTimeout(fixAloma, 300);
-            });
+            })();
+        </script>
+
+        <script type="text/javascript" src="js/main.js"></script>
+
+        <!-- C: reajuste de tamaño y panel de debug (?debug) -->
+        <script>
+            (function () {
+                function ajustar() {
+                    window.scrollTo(0, 0);
+                    try {
+                        if (window.Graphics) {
+                            if (Graphics._onWindowResize) Graphics._onWindowResize();
+                            else if (Graphics._updateAllElements) Graphics._updateAllElements();
+                        }
+                    } catch (e) {}
+                }
+                function ajustarVarias() {
+                    ajustar();
+                    setTimeout(ajustar, 200);
+                    setTimeout(ajustar, 600);
+                    setTimeout(ajustar, 1500);
+                }
+                window.addEventListener('load', ajustarVarias);
+                window.addEventListener('orientationchange', ajustarVarias);
+                window.addEventListener('resize', function () { setTimeout(ajustar, 100); });
+                if (window.visualViewport) {
+                    window.visualViewport.addEventListener('resize', function () { setTimeout(ajustar, 100); });
+                }
+
+                if (/[?&]debug/.test(location.search)) {
+                    var d = document.createElement('div');
+                    d.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;background:rgba(0,0,0,.8);' +
+                        'color:#0f0;font:11px monospace;padding:4px;max-width:100%;' +
+                        'pointer-events:none;white-space:pre-wrap';
+                    document.body.appendChild(d);
+                    setInterval(function () {
+                        try {
+                            var c = document.querySelector('canvas');
+                            var r = c ? c.getBoundingClientRect() : null;
+                            var g = window.Graphics;
+                            var modo = '?';
+                            try { modo = g.isWebGL() ? 'webgl' : 'canvas'; } catch (e) {}
+                            d.textContent =
+                                'ventana ' + innerWidth + 'x' + innerHeight + ' dpr ' + devicePixelRatio + '\n' +
+                                (g ? 'juego ' + g.width + 'x' + g.height + ' box ' + g.boxWidth + 'x' + g.boxHeight +
+                                     ' escala ' + g._realScale + ' ' + modo : 'Graphics no existe') + '\n' +
+                                (r ? 'canvas x' + Math.round(r.left) + ' y' + Math.round(r.top) + ' ' +
+                                     Math.round(r.width) + 'x' + Math.round(r.height) : 'sin canvas') + '\n' +
+                                window.__errores.slice(-6).join('\n');
+                        } catch (e) { d.textContent = 'debug error: ' + e.message; }
+                    }, 500);
+                }
+            })();
         </script>
     </body>
 </html>
