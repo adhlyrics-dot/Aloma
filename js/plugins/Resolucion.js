@@ -21,8 +21,8 @@
  * Este plugin reemplaza a: PantallaVertical.js, GirarCelular.js y PantallaCompleta.js.
  * Ponlos en OFF y deja este en ON (arriba de la lista).
  *
- * Si el jugador gira el celular, el juego guarda en el archivo 1 y se recarga
- * (CineAuto.js lo carga solo). No bloquea la orientacion.
+ * Si el jugador gira el celular, el juego se autoguarda y se recarga
+ * (AbrirUrl.js carga la partida solo). No bloquea la orientacion.
  */
 (function() {
 
@@ -63,14 +63,13 @@
     Graphics._stretchEnabled = true;
 
     // ---------- Si giran el celular: guardar y recargar ----------
+    var recargando = false;
+
     function recargar() {
-        try {
-            if (SceneManager._scene instanceof Scene_Map && !$gameMap.isEventRunning()) {
-                $gameSystem.onBeforeSave();
-                DataManager.saveGame(1);
-                sessionStorage.setItem('volverDelCine', '1');   // CineAuto lo lee
-            }
-        } catch (e) {}
+        if (recargando) return;          // evita recargar dos veces seguidas
+        recargando = true;
+        document.body.style.opacity = '0';   // oculta el salto de tamano
+        try { if (window.guardarAuto) window.guardarAuto(); } catch (e) {}
         location.reload();
     }
 
@@ -79,9 +78,11 @@
         if (ahora !== modoVertical) recargar();
     }
 
-    window.addEventListener('orientationchange', function() { setTimeout(revisar, 500); });
+    function alGirar() { setTimeout(revisar, 150); }
+
+    window.addEventListener('orientationchange', alGirar);
     if (screen.orientation && screen.orientation.addEventListener) {
-        screen.orientation.addEventListener('change', function() { setTimeout(revisar, 500); });
+        screen.orientation.addEventListener('change', alGirar);
     }
 
     // ---------- Pantalla completa al primer toque (sin bloquear orientacion) ----------
