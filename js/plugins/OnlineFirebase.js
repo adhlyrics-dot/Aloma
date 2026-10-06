@@ -375,6 +375,13 @@
         return sp;
     }
 
+    // Altura del sprite sin fallar si su imagen aun no se ha cargado
+    function alturaSprite(sp) {
+        var b = sp.bitmap;
+        if (b && b.isReady && b.isReady()) return sp.patternHeight();
+        return 48;
+    }
+
     // Convierte un salto en pasos de 1 casilla (primero X, luego Y)
     function agregarPasos(r, desdeX, desdeY, aX, aY) {
         var dist = Math.abs(aX - desdeX) + Math.abs(aY - desdeY);
@@ -407,7 +414,7 @@
         _Spriteset_update.call(this);
         this.actualizarRemotos();
         if (this._miEtiqueta) {
-            this._miEtiqueta.et.y = -this._miEtiqueta.sprite.patternHeight();
+            this._miEtiqueta.et.y = -alturaSprite(this._miEtiqueta.sprite);
         }
     };
 
@@ -481,7 +488,7 @@
             }
 
             c.update();
-            r.etiqueta.y = -r.sprite.patternHeight();
+            r.etiqueta.y = -alturaSprite(r.sprite);
         }
     };
 
