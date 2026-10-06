@@ -1,28 +1,35 @@
 /*:
- * @plugindesc Resolucion automatica: vertical en celular (sin girarlo), horizontal en el resto.
+ * @plugindesc Celular siempre en vertical, PC siempre en horizontal.
  *
  * @param Ancho
- * @desc Ancho en PC o celular girado (horizontal).
+ * @desc Ancho en PC (horizontal).
  * @default 1280
  *
  * @param Alto
- * @desc Alto en PC o celular girado (horizontal).
+ * @desc Alto en PC (horizontal).
  * @default 720
  *
  * @param AnchoVertical
- * @desc Ancho cuando el celular esta en vertical.
+ * @desc Ancho en celular (vertical).
  * @default 576
  *
  * @param AltoVerticalMax
- * @desc Alto maximo en vertical. Si tu mapa mide 21 casillas de alto, usa 1008 (21 x 48).
+ * @desc Alto maximo en celular. Si tu mapa mide 21 casillas de alto, usa 1008 (21 x 48).
  * @default 1008
  *
- * @help
- * Este plugin reemplaza a: PantallaVertical.js, GirarCelular.js y PantallaCompleta.js.
- * Ponlos en OFF y deja este en ON (arriba de la lista).
+ * @param PantallaCompleta
+ * @desc true = pide pantalla completa al primer toque en celular. false = no (recomendado).
+ * @default false
  *
- * Si el jugador gira el celular, el juego se autoguarda y se recarga
- * (AbrirUrl.js carga la partida solo). No bloquea la orientacion.
+ * @help
+ * Reemplaza a: PantallaVertical.js, GirarCelular.js y PantallaCompleta.js.
+ *
+ * Celular: el juego es vertical. Si el jugador gira el celular a horizontal,
+ *          se tapa la pantalla con un aviso para que lo vuelva a poner vertical.
+ * PC:      el juego es horizontal.
+ *
+ * Los navegadores solo permiten bloquear la orientacion de verdad en pantalla
+ * completa o en una app instalada, por eso se usa el aviso.
  */
 (function() {
 
@@ -31,23 +38,30 @@
     var hH = Number(p['Alto'] || 720);
     var aV = Number(p['AnchoVertical'] || 576);
     var maxV = Number(p['AltoVerticalMax'] || 1008);
+    var usarPantallaCompleta = String(p['PantallaCompleta'] || 'false') === 'true';
 
     function esMovil() { return Utils.isMobileDevice(); }
 
-    // screen.orientation no cambia cuando se abre el teclado del chat
-    function esVertical() {
+    // No depende del tamano de la ventana, asi el teclado del chat no lo confunde
+    function esHorizontal() {
         if (screen.orientation && screen.orientation.type) {
-            return screen.orientation.type.indexOf('portrait') === 0;
+            return screen.orientation.type.indexOf('landscape') === 0;
         }
-        return window.innerHeight > window.innerWidth;
+        if (typeof window.orientation === 'number') {
+            return Math.abs(window.orientation) === 90;
+        }
+        return window.innerWidth > window.innerHeight;
     }
 
-    var modoVertical = esMovil() && esVertical();
+    var movil = esMovil();
     var ancho, alto;
 
-    if (modoVertical) {
+    if (movil) {
+        // Proporcion del celular, sin importar como estaba al abrir
+        var largo = Math.max(window.innerWidth, window.innerHeight);
+        var corto = Math.max(1, Math.min(window.innerWidth, window.innerHeight));
         ancho = aV;
-        alto = Math.round(aV * window.innerHeight / window.innerWidth);
+        alto = Math.round(aV * largo / corto);
         alto = Math.max(800, Math.min(maxV, alto));
     } else {
         ancho = aH;
@@ -62,45 +76,58 @@
     // El juego se ajusta al tamano de la pantalla
     Graphics._stretchEnabled = true;
 
-    // ---------- Si giran el celular: guardar y recargar ----------
-    var recargando = false;
+    // ---------- Aviso cuando el celular esta en horizontal ----------
+    var aviso = null;
 
-    function recargar() {
-        if (recargando) return;          // evita recargar dos veces seguidas
-        recargando = true;
-        document.body.style.opacity = '0';   // oculta el salto de tamano
-        try { if (window.guardarAuto) window.guardarAuto(); } catch (e) {}
-        location.reload();
+    function crearAviso() {
+        aviso = document.createElement('div');
+        aviso.style.cssText =
+            'position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;' +
+            'background:#000;color:#fff;display:none;flex-direction:column;' +
+            'align-items:center;justify-content:center;text-align:center;' +
+            'font-family:sans-serif;font-size:18px;padding:16px;box-sizing:border-box;';
+        aviso.innerHTML =
+            '<div style="font-size:60px;">\uD83D\uDCF1</div>' +
+            '<p>Please turn your phone upright<br>' +
+            'Pon el celular en vertical</p>' +
+            '<p dir="rtl">\u064A\u0631\u062C\u0649 \u062A\u062F\u0648\u064A\u0631 \u0627\u0644\u0647\u0627\u062A\u0641 \u0625\u0644\u0649 \u0627\u0644\u0648\u0636\u0639 \u0627\u0644\u0631\u0623\u0633\u064A</p>';
+        document.body.appendChild(aviso);
+        revisar();
     }
 
     function revisar() {
-        var ahora = esMovil() && esVertical();
-        if (ahora !== modoVertical) recargar();
+        if (!aviso) return;
+        aviso.style.display = (movil && esHorizontal()) ? 'flex' : 'none';
     }
 
-    function alGirar() { setTimeout(revisar, 150); }
-
-    window.addEventListener('orientationchange', alGirar);
-    if (screen.orientation && screen.orientation.addEventListener) {
-        screen.orientation.addEventListener('change', alGirar);
+    // ---------- Intentar bloquear en vertical (solo funciona en algunos casos) ----------
+    function bloquearVertical() {
+        try {
+            if (movil && screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock('portrait').catch(function() {});
+            }
+        } catch (e) {}
     }
 
-    // ---------- Pantalla completa al primer toque (sin bloquear orientacion) ----------
+    // ---------- Pantalla completa (solo si activas el parametro) ----------
     var hecho = false;
     function pantallaCompleta() {
-        if (hecho || !esMovil()) return;
+        if (hecho || !usarPantallaCompleta || !movil) return;
         hecho = true;
         var el = document.documentElement;
         var pedir = el.requestFullscreen || el.webkitRequestFullscreen;
         if (pedir && !document.fullscreenElement && !document.webkitFullscreenElement) {
             try { pedir.call(el); } catch (e) {}
         }
+        bloquearVertical();
     }
     document.addEventListener('touchend', pantallaCompleta);
     document.addEventListener('click', pantallaCompleta);
 
-    // ---------- Ventana en PC (NW.js) ----------
+    // ---------- Al cargar la pagina ----------
     window.addEventListener('load', function() {
+        crearAviso();
+        bloquearVertical();
         if (Utils.isNwjs()) {
             var dx = ancho - window.innerWidth;
             var dy = alto - window.innerHeight;
@@ -110,5 +137,11 @@
         document.body.style.overflow = 'hidden';
         document.body.style.margin = '0';
     });
+
+    window.addEventListener('orientationchange', function() { setTimeout(revisar, 150); });
+    window.addEventListener('resize', revisar);
+    if (screen.orientation && screen.orientation.addEventListener) {
+        screen.orientation.addEventListener('change', function() { setTimeout(revisar, 150); });
+    }
 
 })();
