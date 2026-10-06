@@ -1,5 +1,5 @@
 /*:
- * @plugindesc Celular siempre en vertical, PC siempre en horizontal.
+ * @plugindesc Celular con juego vertical que no cambia al girar, PC en horizontal.
  *
  * @param Ancho
  * @desc Ancho en PC (horizontal).
@@ -21,15 +21,20 @@
  * @desc true = pide pantalla completa al primer toque en celular. false = no (recomendado).
  * @default false
  *
+ * @param AvisoHorizontal
+ * @desc true = al girar el celular a horizontal tapa el juego con un aviso. false = el juego sigue visible.
+ * @default false
+ *
  * @help
  * Reemplaza a: PantallaVertical.js, GirarCelular.js y PantallaCompleta.js.
  *
- * Celular: el juego es vertical. Si el jugador gira el celular a horizontal,
- *          se tapa la pantalla con un aviso para que lo vuelva a poner vertical.
+ * Celular: el juego es vertical y NO cambia al girar el celular: se queda igual,
+ *          solo se ve mas pequeno porque la pantalla horizontal es mas baja.
+ *          Sin pantalla completa, el navegador no permite bloquear la rotacion.
  * PC:      el juego es horizontal.
  *
- * Los navegadores solo permiten bloquear la orientacion de verdad en pantalla
- * completa o en una app instalada, por eso se usa el aviso.
+ * En celular se bloquea la pantalla completa (tambien con doble toque)
+ * y el zoom por doble toque, salvo que pongas PantallaCompleta en true.
  */
 (function() {
 
@@ -39,6 +44,7 @@
     var aV = Number(p['AnchoVertical'] || 576);
     var maxV = Number(p['AltoVerticalMax'] || 1008);
     var usarPantallaCompleta = String(p['PantallaCompleta'] || 'false') === 'true';
+    var avisoHorizontal = String(p['AvisoHorizontal'] || 'false') === 'true';
 
     function esMovil() { return Utils.isMobileDevice(); }
 
@@ -124,10 +130,27 @@
     document.addEventListener('touchend', pantallaCompleta);
     document.addEventListener('click', pantallaCompleta);
 
+    // ---------- Que el doble toque no active pantalla completa ni zoom ----------
+    function bloquearPantallaCompletaYZoom() {
+        if (!movil || usarPantallaCompleta) return;
+        document.body.style.touchAction = 'manipulation';
+        document.addEventListener('dblclick', function(e) { e.preventDefault(); }, { passive: false });
+        function salir() {
+            if (document.fullscreenElement && document.exitFullscreen) {
+                try { document.exitFullscreen(); } catch (e) {}
+            } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+                try { document.webkitExitFullscreen(); } catch (e) {}
+            }
+        }
+        document.addEventListener('fullscreenchange', salir);
+        document.addEventListener('webkitfullscreenchange', salir);
+    }
+
     // ---------- Al cargar la pagina ----------
     window.addEventListener('load', function() {
-        crearAviso();
+        if (avisoHorizontal) crearAviso();
         bloquearVertical();
+        bloquearPantallaCompletaYZoom();
         if (Utils.isNwjs()) {
             var dx = ancho - window.innerWidth;
             var dy = alto - window.innerHeight;
