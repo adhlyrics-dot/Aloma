@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="es" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin · Adh Games</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Kufi+Arabic:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fdf6ec; --rosa:#ffc8dd; --celeste:#bde0fe; --lila:#cdb4db;
+  --menta:#b9fbc0; --durazno:#ffd6a5; --amarillo:#fdffb6; --ink:#5b4b6b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:'Press Start 2P',monospace; font-size:11px; line-height:1.9; image-rendering:pixelated;
+  background-image:linear-gradient(var(--ink) 1px,transparent 1px),linear-gradient(90deg,var(--ink) 1px,transparent 1px);
+  background-size:32px 32px; background-blend-mode:soft-light;
+}
+
+.wrap{max-width:640px;margin:0 auto;padding:64px 16px 32px;display:flex;flex-direction:column;gap:16px}
+.hidden{display:none!important}
+.langs{position:fixed;top:8px;inset-inline-end:8px;z-index:10;display:flex;gap:6px}
+.langs button{font:inherit;font-size:10px;color:var(--ink);background:#fff;border:3px solid var(--ink);padding:8px 10px;box-shadow:3px 3px 0 var(--ink);cursor:pointer;min-width:44px;min-height:40px}
+.langs button[aria-pressed="true"]{background:var(--amarillo)}
+.langs button:active{transform:translate(3px,3px);box-shadow:none}
+.box{background:#fff;border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:16px;display:flex;flex-direction:column;gap:12px;text-align:start}
+h1{font-size:clamp(16px,5vw,24px);line-height:1.5;text-align:center;margin:8px 0;text-shadow:3px 3px 0 var(--rosa),6px 6px 0 var(--celeste)}
+h2{font-size:12px;margin:0}
+
+.btn{font:inherit;color:var(--ink);border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:14px;min-height:52px;cursor:pointer;background:var(--lila)}
+.btn:active{transform:translate(4px,4px);box-shadow:none}
+.btn.ok{background:var(--menta)} .btn.del{background:var(--rosa);min-height:40px;padding:6px 10px;font-size:10px}
+.btn:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,.langs button:focus-visible{outline:3px dashed var(--ink);outline-offset:3px}
+input,textarea,select{font:inherit;font-size:14px;color:var(--ink);background:#fff;border:4px solid var(--ink);padding:12px;width:100%;min-height:48px}
+
+textarea{resize:vertical;min-height:80px}
+label{display:block}
+.msg{text-align:center;padding:8px;min-height:2em}
+.msg.err{background:var(--rosa);border:3px solid var(--ink)} .msg.good{background:var(--menta);border:3px solid var(--ink)}
+.item{display:flex;gap:10px;align-items:center;justify-content:space-between;border:3px solid var(--ink);padding:10px;background:var(--bg)}
+.item span.tx{flex:1;word-break:break-word;font-size:10px}
+
+.flags{display:inline-flex;gap:4px;margin-inline-start:6px;vertical-align:middle}
+.flags i{font-style:normal;font-size:8px;border:2px solid var(--ink);padding:0 4px;background:var(--amarillo)}
+.group{display:flex;flex-direction:column;gap:10px}
+.group.verdad{border-inline-start:8px solid var(--celeste);padding-inline-start:10px}
+.group.reto{border-inline-start:8px solid var(--rosa);padding-inline-start:10px}
+.stkgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.stkcard{border:3px solid var(--ink);background:var(--bg);padding:8px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.stkcard img{width:88px;height:88px;object-fit:contain;background:repeating-conic-gradient(#e9e2f2 0 25%,#fff 0 50%) 0 0/16px 16px;border:2px solid var(--ink)}
+.stkcard span{font-size:9px;word-break:break-word}
+#stkPrev{width:120px;height:120px;object-fit:contain;align-self:center;border:3px solid var(--ink);background:repeating-conic-gradient(#e9e2f2 0 25%,#fff 0 50%) 0 0/16px 16px}
+
+/* ===== Rediseño: pestañas, menú de botones y secciones ===== */
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tab{font:inherit;color:var(--ink);background:#fff;border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:16px 8px;min-height:56px;cursor:pointer}
+.tab[aria-pressed="true"]{background:var(--amarillo);transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+.menu{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.tile{font:inherit;color:var(--ink);background:var(--lila);border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:18px 8px;min-height:120px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;word-break:break-word}
+.tile b{font-size:30px;line-height:1}
+.tile:nth-child(4n+2){background:var(--rosa)} .tile:nth-child(4n+3){background:var(--celeste)} .tile:nth-child(4n){background:var(--menta)}
+.tile:active{transform:translate(4px,4px);box-shadow:none}
+.tile.sm{min-height:76px;padding:10px 6px;gap:6px}
+.tile.sm small{font-size:9px;background:#fff;border:2px solid var(--ink);padding:0 6px}
+.tile[aria-pressed="true"]{outline:4px dashed var(--ink);outline-offset:3px}
+.tab:focus-visible,.tile:focus-visible{outline:3px dashed var(--ink);outline-offset:3px}
+.sec,.col{display:flex;flex-direction:column;gap:16px}.col{gap:12px}
+.btn.back{background:var(--celeste);min-height:44px;padding:8px 14px;align-self:flex-start}
+.rowf{display:flex;gap:8px}.rowf input{flex:1;min-width:0}.rowf .btn{white-space:nowrap}
+/* ===== Responsive: celular y PC ===== */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tmp{width:100%;aspect-ratio:1;max-height:200px;border:3px solid var(--ink);background:#000;overflow:hidden}
+@media (max-width:700px){.two{grid-template-columns:1fr}}
+@media (max-width:420px){.wrap{padding:60px 10px 24px}.tile{min-height:104px;padding:14px 6px}.tab,.btn{padding:12px 8px}.box{padding:12px}.menu{gap:10px}}
+@media (min-width:900px){
+  .wrap{max-width:980px;padding-top:72px;gap:20px}
+  .tabs{max-width:560px;width:100%;margin-inline:auto}
+  .menu{grid-template-columns:repeat(3,1fr);gap:18px}
+  .tile{min-height:150px}.tile b{font-size:38px}
+  .box{padding:22px;gap:14px}
+  .stkgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+  .stkcard img{width:110px;height:110px}
+}
+/* ===== Minijuegos ===== */
+.mthumb{width:64px;height:64px;object-fit:cover;flex:none;border:2px solid var(--ink);background:repeating-conic-gradient(#e9e2f2 0 25%,#fff 0 50%) 0 0/16px 16px}
+.btn.sm{min-height:40px;padding:6px 10px;font-size:10px}
+.mrow{display:flex;gap:10px;align-items:center;border:3px solid var(--ink);padding:10px;background:var(--bg)}
+.mrow .tx{flex:1;min-width:0;word-break:break-word;font-size:10px}
+.mrow .tx small{display:block;font-size:8px;opacity:.75;direction:ltr;unicode-bidi:plaintext;text-align:start}
+
+.mrow .acts{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;max-width:190px}
+@media (max-width:520px){.mrow{flex-wrap:wrap}.mrow .acts{max-width:none;width:100%;justify-content:flex-start}}
+/* ===== Pulido de botones (estilo pixel art) ===== */
+.btn,.tab,.tile,.langs button{--c:var(--lila)}
+.tile:nth-child(4n+2){--c:var(--rosa)}.tile:nth-child(4n+3){--c:var(--celeste)}.tile:nth-child(4n){--c:var(--menta)}
+.btn.ok{--c:var(--menta)}.btn.del{--c:var(--rosa)}.btn.back{--c:var(--celeste)}
+.tab,.langs button{--c:#fff}.tab[aria-pressed="true"],.langs button[aria-pressed="true"]{--c:var(--amarillo)}
+:is(.btn,.tab,.tile,.langs button):not(#_){position:relative;border:0;margin:4px;color:var(--ink);text-shadow:1px 1px 0 rgba(255,255,255,.75);
+ background:linear-gradient(180deg,color-mix(in srgb,var(--c) 45%,#fff) 0,var(--c) 55%,color-mix(in srgb,var(--c) 82%,#9a7ab8) 100%);
+ box-shadow:0 -4px 0 0 var(--ink),0 4px 0 0 var(--ink),-4px 0 0 0 var(--ink),4px 0 0 0 var(--ink),inset 0 4px 0 0 rgba(255,255,255,.7),inset 4px 0 0 0 rgba(255,255,255,.35),inset 0 -5px 0 0 rgba(77,44,94,.16);
+ filter:drop-shadow(4px 5px 0 rgba(77,44,94,.28));transition:filter .1s,transform .1s}
+:is(.btn,.tab,.tile,.langs button):not(#_):hover{filter:brightness(1.08) drop-shadow(4px 5px 0 rgba(77,44,94,.28))}
+:is(.btn,.tab,.tile,.langs button):not(#_):active{transform:translate(3px,4px);filter:none}
+
+:is(.tab):not(#_)[aria-pressed="true"]{transform:translate(2px,3px);filter:none}
+:is(.tile):not(#_){gap:12px}
+.tile b{filter:drop-shadow(3px 3px 0 rgba(77,44,94,.25));transition:transform .15s}
+.tile:hover b{transform:translateY(-4px) scale(1.12)}
+:is(.btn.back):not(#_)::before{content:"";display:none}
+.box{box-shadow:0 -4px 0 0 var(--ink),0 4px 0 0 var(--ink),-4px 0 0 0 var(--ink),4px 0 0 0 var(--ink),8px 8px 0 0 rgba(77,44,94,.25);border:0;margin:4px}
+.stkcard,.item,.mrow{box-shadow:3px 3px 0 var(--ink);transition:transform .1s}.stkcard:hover{transform:translateY(-3px)}
+input,textarea,select{box-shadow:inset 3px 3px 0 rgba(77,44,94,.12)}
+@media (prefers-reduced-motion:reduce){.tile b,.stkcard{transition:none}}
+/* ===== Árabe: mismo diseño que español e inglés (solo se añade la letra árabe donde la pixelada no la tiene) ===== */
+html[lang="ar"] :is(body,button,input,textarea,select){font-family:'Press Start 2P','Noto Kufi Arabic',monospace}
+</style>
+</head>
+<body>
+<div class="langs" role="group" aria-label="Language">
+  <button data-l="es">ES</button><button data-l="en">EN</button><button data-l="ar">AR</button>
+</div>
+<main class="wrap">
+  <h1 data-i="title"></h1>
+
+  <!-- Inicio de sesión -->
+  <section id="login" class="box">
+    <h2 data-i="login"></h2>
+    <input id="email" type="email" autocomplete="username" data-ph="email">
+    <input id="pass" type="password" autocomplete="current-password" data-ph="pass">
+    <button class="btn ok" id="bLogin" data-i="enter"></button>
+  </section>
+
+  <!-- Panel -->
+  <section id="panel" class="hidden" style="display:flex;flex-direction:column;gap:16px">
+    <nav class="tabs">
+      <button class="tab" data-tab="juegos" data-i="games"></button>
+      <button class="tab" data-tab="config" data-i="settings"></button>
+    </nav>
+    <div id="vJuegos" class="menu"><button class="tile" data-go="vor"><b>🎲</b><span data-i="tVor"></span></button></div>
+    <div id="vConfig" class="menu hidden"><button class="tile" data-go="stk"><b>🖼️</b><span data-i="tStk"></span></button><button class="tile" data-go="char"><b>👤</b><span data-i="tChar"></span></button><button class="tile" data-go="tema"><b>🎞️</b><span data-i="tTema"></span></button><button class="tile" data-go="mini"><b>🎮</b><span data-i="tMini"></span></button></div>
+
+    <section id="sVor" class="sec hidden">
+      <button class="btn back" data-i="back"></button>
+      <div class="box">
+        <h2 data-i="newQ"></h2>
+        <label><span data-i="lEs"></span><textarea id="qEs"></textarea></label>
+        <label><span data-i="lEn"></span><textarea id="qEn" dir="ltr"></textarea></label>
+        <label><span>العربية</span><textarea id="qAr" dir="rtl" lang="ar"></textarea></label>
+        <button class="btn" id="bTr" data-i="trBtn">Traducir automáticamente</button>
+        <select id="qTipo"><option value="verdad" data-i="truth"></option><option value="reto" data-i="dare"></option></select>
+        <button class="btn ok" id="bAdd" data-i="add"></button>
+      </div>
+      <div class="box">
+        <h2 data-i="list"></h2>
+        <div class="group verdad"><h2 data-i="truths"></h2><div id="lV" class="group"></div></div>
+        <div class="group reto"><h2 data-i="dares"></h2><div id="lR" class="group"></div></div>
+      </div>
+    </section>
+
+    <section id="sStk" class="sec hidden">
+      <button class="btn back" data-i="back"></button>
+      <div class="box">
+        <h2 data-i="genTitle"></h2>
+        <div class="rowf"><input id="genName" maxlength="24" autocomplete="off" data-ph="genPh"><button class="btn ok" id="bAddGen" data-i="genAdd"></button></div>
+        <div id="gGrid" class="menu"></div>
+      </div>
+      <div class="box hidden" id="genPanel">
+        <h2 id="genHead"></h2>
+        <div id="upForm" class="col">
+          <div class="msg" data-i="stkHelp" style="min-height:0"></div>
+          <input id="stkFile" type="file" accept="image/png,image/jpeg">
+          <img id="stkPrev" class="hidden" alt="">
+          <input id="stkName" maxlength="20" autocomplete="off" data-ph="stkNamePh">
+          <button class="btn ok" id="bAddStk" data-i="stkAdd"></button>
+        </div>
+        <div id="lS" class="stkgrid"></div>
+        <button class="btn del" id="bDelGen" data-i="genDel"></button>
+      </div>
+    </section>
+
+    <section id="sChar" class="sec hidden">
+      <button class="btn back" data-i="back"></button>
+      <div class="box">
+        <h2 data-i="charTitle"></h2>
+        <div class="rowf"><input id="catName" maxlength="20" autocomplete="off" data-ph="catPh"><button class="btn ok" id="bAddCat" data-i="catAdd"></button></div>
+        <div id="cGrid" class="menu"></div>
+      </div>
+      <div class="box hidden" id="catPanel">
+        <h2 id="catHead"></h2>
+        <div id="cvForm" class="col">
+          <div class="msg" data-i="coverTitle" style="min-height:0"></div>
+          <img id="cvPrev" class="hidden" alt="" style="width:120px;height:120px;object-fit:contain;align-self:center;border:3px solid var(--ink);background:repeating-conic-gradient(#e9e2f2 0 25%,#fff 0 50%) 0 0/16px 16px">
+          <input id="cvFile" type="file" accept="image/png">
+          <button class="btn ok" id="bCover" data-i="coverSave"></button>
+        </div>
+        <div id="chForm" class="col">
+          <div class="msg" data-i="charHelp" style="min-height:0"></div>
+          <input id="chFile" type="file" accept="image/png">
+          <img id="chPrev" class="hidden" alt="" style="width:120px;height:120px;object-fit:contain;align-self:center;border:3px solid var(--ink);background:repeating-conic-gradient(#e9e2f2 0 25%,#fff 0 50%) 0 0/16px 16px">
+          <input id="chName" maxlength="20" autocomplete="off" data-ph="stkNamePh">
+          <button class="btn ok" id="bAddCh" data-i="charAdd"></button>
+        </div>
+        <div id="lC" class="stkgrid"></div>
+        <button class="btn del" id="bDelCat" data-i="catDel"></button>
+      </div>
+    </section>
+
+    <section id="sTema" class="sec hidden">
+      <button class="btn back" data-i="back"></button>
+      <div class="box">
+        <h2 data-i="tmTitle"></h2>
+        <div class="msg" data-i="tmHelp" style="min-height:0"></div>
+        <input id="tmName" maxlength="20" autocomplete="off" data-ph="stkNamePh">
+        <div class="two">
+          <div class="col tmslot" data-s="m">
+            <div class="msg" data-i="tmPhone" style="min-height:0"></div>
+            <input class="tmf" type="file" accept="video/mp4,video/webm,image/gif,image/webp,image/png,image/jpeg">
+            <input class="tmu" type="url" autocomplete="off" data-ph="tmUrlPh" style="text-transform:none">
+            <div class="tmp hidden"></div>
+          </div>
+          <div class="col tmslot" data-s="p">
+            <div class="msg" data-i="tmPc" style="min-height:0"></div>
+            <input class="tmf" type="file" accept="video/mp4,video/webm,image/gif,image/webp,image/png,image/jpeg">
+            <input class="tmu" type="url" autocomplete="off" data-ph="tmUrlPh" style="text-transform:none">
+            <div class="tmp hidden"></div>
+          </div>
+        </div>
+        <button class="btn ok" id="bAddTm" data-i="tmAdd"></button>
+        <div id="lT" class="stkgrid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr))"></div>
+      </div>
+    </section>
+
+    <section id="sMini" class="sec hidden">
+      <button class="btn back" data-i="back"></button>
+      <div class="box">
+        <h2 id="mnHead" data-i="mnTitle"></h2>
+        <div class="msg" data-i="mnHelp" style="min-height:0"></div>
+        <label><span data-i="mnEs"></span><input id="mnEs" maxlength="24" autocomplete="off"></label>
+        <button class="btn" id="bMnTr" data-i="trBtn"></button>
+        <label><span>English</span><input id="mnEn" dir="ltr" maxlength="24" autocomplete="off"></label>
+        <label><span>العربية</span><input id="mnAr" dir="rtl" lang="ar" maxlength="24" autocomplete="off"></label>
+        <div class="msg" data-i="mnCoverHelp" style="min-height:0"></div>
+        <input id="mnFile" type="file" accept="image/png,image/jpeg">
+        <img id="mnPrev" class="hidden" alt="" style="width:120px;height:120px;object-fit:cover;align-self:center;border:3px solid var(--ink);background:repeating-conic-gradient(#e9e2f2 0 25%,#fff 0 50%) 0 0/16px 16px">
+        <label><span data-i="mnLink"></span><input id="mnLink" dir="ltr" maxlength="300" autocomplete="off" autocapitalize="off" spellcheck="false" data-ph="mnLinkPh"></label>
+        <button class="btn ok" id="bMnSave" data-i="mnAdd"></button>
+        <button class="btn hidden" id="bMnCancel" data-i="mnCancel"></button>
+      </div>
+      <div class="box">
+        <h2 data-i="mnList"></h2>
+        <div id="lM" class="col"></div>
+      </div>
+    </section>
+
+    <button class="btn" id="bOut" data-i="logout"></button>
+  </section>
+
+  <div id="msg" class="msg"></div>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, setDoc, updateDoc, deleteDoc, doc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+/* ===== Firebase (configuración tal cual) ===== */
+const firebaseConfig = {
+  apiKey: "AIzaSyDrtK1WFIwYNwY0gyiXl5o5RJ4b44Ekm7k",
+  authDomain: "verdadreto-6bb8d.firebaseapp.com",
+  projectId: "verdadreto-6bb8d",
+  storageBucket: "verdadreto-6bb8d.firebasestorage.app",
+  messagingSenderId: "918592609096",
+  appId: "1:918592609096:web:ee82aab620e3a360fc717d"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+/* ===== Traducciones ===== */
+const T = {
+  es:{stkTitle:"Stickers del chat",stkHelp:"Se usan en todas las salas. Formatos: PNG o JPG (se ajustan a 256 px).",stkNamePh:"Nombre (opcional)",stkAdd:"Subir sticker",stkAdded:"¡Sticker agregado!",stkDeleted:"Sticker borrado.",stkNeed:"Elige primero una imagen PNG o JPG.",stkType:"Solo se permiten imágenes PNG o JPG.",stkBig:"La imagen es demasiado grande incluso reducida.",stkEmpty:"Aún no hay stickers",title:"PANEL DE PREGUNTAS",login:"Iniciar sesión",email:"Correo",pass:"Contraseña",enter:"Entrar",
+    newQ:"Nueva pregunta",lEs:"Español (obligatorio)",lEn:"English (se traduce solo, editable)",truth:"Verdad",dare:"Reto",add:"Agregar",
+    list:"Preguntas actuales",truths:"Verdades",dares:"Retos",del:"Borrar",logout:"Cerrar sesión",empty:"Sin preguntas",
+    needEs:"Escribe la pregunta en español.",added:"¡Pregunta agregada!",deleted:"Pregunta borrada.",
+    errLogin:"Correo o contraseña incorrectos.",errNet:"Error de red. Revisa tu conexión.",errMany:"Demasiados intentos. Espera un momento.",
+    errPerm:"No tienes permiso para hacer esto.",errGen:"Ocurrió un error. Inténtalo de nuevo.",fill:"Completa correo y contraseña.",trBtn:"Traducir automáticamente",translating:"Traduciendo...",translated:"Traducción lista. Revísala antes de agregar.",transFail:"No se pudo traducir. Escribe la traducción a mano.",addedNoTr:"Agregada sin traducción automática (se verá en español)."},
+  en:{stkTitle:"Chat stickers",stkHelp:"Used in every room. Formats: PNG or JPG (resized to 256 px).",stkNamePh:"Name (optional)",stkAdd:"Upload sticker",stkAdded:"Sticker added!",stkDeleted:"Sticker deleted.",stkNeed:"Pick a PNG or JPG image first.",stkType:"Only PNG or JPG images are allowed.",stkBig:"The image is too large even after resizing.",stkEmpty:"No stickers yet",title:"QUESTIONS PANEL",login:"Log in",email:"Email",pass:"Password",enter:"Enter",
+    newQ:"New question",lEs:"Español (required)",lEn:"English (auto-translated, editable)",truth:"Truth",dare:"Dare",add:"Add",
+    list:"Current questions",truths:"Truths",dares:"Dares",del:"Delete",logout:"Log out",empty:"No questions",
+    needEs:"Write the question in Spanish.",added:"Question added!",deleted:"Question deleted.",
+    errLogin:"Wrong email or password.",errNet:"Network error. Check your connection.",errMany:"Too many attempts. Wait a moment.",
+    errPerm:"You do not have permission to do this.",errGen:"Something went wrong. Try again.",fill:"Enter email and password.",trBtn:"Translate automatically",translating:"Translating...",translated:"Translation ready. Review it before adding.",transFail:"Could not translate. Type the translation by hand.",addedNoTr:"Added without automatic translation (it will show in Spanish)."},
+  ar:{stkTitle:"ملصقات الدردشة",stkHelp:"تُستخدم في كل الغرف. الصيغ: PNG أو JPG (تُصغَّر إلى 256 بكسل).",stkNamePh:"الاسم (اختياري)",stkAdd:"رفع ملصق",stkAdded:"تمت إضافة الملصق!",stkDeleted:"تم حذف الملصق.",stkNeed:"اختر صورة PNG أو JPG أولاً.",stkType:"يُسمح فقط بصور PNG أو JPG.",stkBig:"الصورة كبيرة جداً حتى بعد التصغير.",stkEmpty:"لا توجد ملصقات بعد",title:"لوحة الأسئلة",login:"تسجيل الدخول",email:"البريد الإلكتروني",pass:"كلمة المرور",enter:"دخول",
+    newQ:"سؤال جديد",lEs:"الإسبانية (مطلوب)",lEn:"الإنجليزية (تُترجم تلقائياً، قابلة للتعديل)",truth:"حقيقة",dare:"جرأة",add:"إضافة",
+    list:"الأسئلة الحالية",truths:"حقائق",dares:"تحديات",del:"حذف",logout:"تسجيل الخروج",empty:"لا توجد أسئلة",
+    needEs:"اكتب السؤال بالإسبانية.",added:"تمت إضافة السؤال!",deleted:"تم حذف السؤال.",
+    errLogin:"البريد أو كلمة المرور غير صحيحة.",errNet:"خطأ في الشبكة. تحقق من اتصالك.",errMany:"محاولات كثيرة. انتظر قليلاً.",
+    errPerm:"ليست لديك صلاحية لهذا الإجراء.",errGen:"حدث خطأ. حاول مرة أخرى.",fill:"أدخل البريد وكلمة المرور.",trBtn:"ترجمة تلقائية",translating:"جارٍ الترجمة...",translated:"الترجمة جاهزة. راجعها قبل الإضافة.",transFail:"تعذرت الترجمة. اكتب الترجمة يدوياً.",addedNoTr:"تمت الإضافة بدون ترجمة تلقائية (ستظهر بالإسبانية)."}
+};
+Object.assign(T.es,{title:"PANEL ADMIN",games:"Juegos",settings:"Configuración",tVor:"Verdad o Reto",tStk:"Sticker",back:"← Atrás",genTitle:"Géneros de stickers",genPh:"Nuevo género (ej. Anime)",genAdd:"Crear género",genAdded:"¡Género creado!",genDeleted:"Género borrado.",genNeed:"Escribe el nombre del género.",genEmpty:"Crea tu primer género",genPick:"Elige primero un género.",genConfirm:"¿Borrar el género y todos sus stickers?",genDel:"Borrar género",noGen:"Sin género"});
+Object.assign(T.en,{title:"ADMIN PANEL",games:"Games",settings:"Settings",tVor:"Truth or Dare",tStk:"Sticker",back:"← Back",genTitle:"Sticker genres",genPh:"New genre (e.g. Anime)",genAdd:"Create genre",genAdded:"Genre created!",genDeleted:"Genre deleted.",genNeed:"Type the genre name.",genEmpty:"Create your first genre",genPick:"Pick a genre first.",genConfirm:"Delete the genre and all its stickers?",genDel:"Delete genre",noGen:"No genre"});
+Object.assign(T.ar,{title:"لوحة الإدارة",games:"الألعاب",settings:"الإعدادات",tVor:"حقيقة أو جرأة",tStk:"ملصق",back:"← رجوع",genTitle:"أنواع الملصقات",genPh:"نوع جديد (مثل أنمي)",genAdd:"إنشاء نوع",genAdded:"تم إنشاء النوع!",genDeleted:"تم حذف النوع.",genNeed:"اكتب اسم النوع.",genEmpty:"أنشئ أول نوع",genPick:"اختر نوعاً أولاً.",genConfirm:"حذف النوع وكل ملصقاته؟",genDel:"حذف النوع",noGen:"بدون نوع"});
+Object.assign(T.es,{tChar:"Personaje",charTitle:"Personajes del perfil",charHelp:"Sube el personaje en PNG (se ajusta a 256 px). Los jugadores lo eligen en su perfil.",charAdd:"Subir personaje",charAdded:"¡Personaje agregado!",charDeleted:"Personaje borrado.",charNeed:"Elige primero una imagen PNG.",charType:"Solo se permiten imágenes PNG.",charEmpty:"Aún no hay personajes"});
+Object.assign(T.en,{tChar:"Character",charTitle:"Profile characters",charHelp:"Upload the character as PNG (resized to 256 px). Players pick it in their profile.",charAdd:"Upload character",charAdded:"Character added!",charDeleted:"Character deleted.",charNeed:"Pick a PNG image first.",charType:"Only PNG images are allowed.",charEmpty:"No characters yet"});
+Object.assign(T.ar,{tChar:"شخصية",charTitle:"شخصيات الملف الشخصي",charHelp:"ارفع الشخصية بصيغة PNG (تُصغَّر إلى 256 بكسل). يختارها اللاعبون في ملفهم.",charAdd:"رفع شخصية",charAdded:"تمت إضافة الشخصية!",charDeleted:"تم حذف الشخصية.",charNeed:"اختر صورة PNG أولاً.",charType:"يُسمح فقط بصور PNG.",charEmpty:"لا توجد شخصيات بعد"});
+Object.assign(T.es,{charTitle:"Categorías de personajes",charHelp:"Sube personajes en PNG (se ajustan a 256 px). Los jugadores los eligen en su perfil.",girl:"Chica",boy:"Chico",catPh:"Nueva categoría (ej. Mascota)",catAdd:"Agregar categoría",catNeed:"Escribe el nombre de la categoría.",catDel:"Borrar categoría",catConfirm:"¿Borrar la categoría y todos sus personajes?",coverTitle:"Foto de portada (PNG)",coverSave:"Guardar portada",coverSaved:"¡Portada guardada!",coverNeed:"Elige primero una imagen PNG.",noCat:"Sin categoría",moveTo:"Mover a..."});
+Object.assign(T.en,{charTitle:"Character categories",charHelp:"Upload PNG characters (resized to 256 px). Players pick them in their profile.",girl:"Girl",boy:"Boy",catPh:"New category (e.g. Pet)",catAdd:"Add category",catNeed:"Type the category name.",catDel:"Delete category",catConfirm:"Delete the category and all its characters?",coverTitle:"Cover photo (PNG)",coverSave:"Save cover",coverSaved:"Cover saved!",coverNeed:"Pick a PNG image first.",noCat:"No category",moveTo:"Move to..."});
+Object.assign(T.ar,{charTitle:"فئات الشخصيات",charHelp:"ارفع شخصيات PNG (تُصغَّر إلى 256 بكسل). يختارها اللاعبون في ملفهم.",girl:"فتاة",boy:"فتى",catPh:"فئة جديدة (مثل حيوان أليف)",catAdd:"إضافة فئة",catNeed:"اكتب اسم الفئة.",catDel:"حذف الفئة",catConfirm:"حذف الفئة وكل شخصياتها؟",coverTitle:"صورة الغلاف (PNG)",coverSave:"حفظ الغلاف",coverSaved:"تم حفظ الغلاف!",coverNeed:"اختر صورة PNG أولاً.",noCat:"بدون فئة",moveTo:"نقل إلى..."});
+Object.assign(T.es,{tTema:"Tema",tmTitle:"Fondos animados",tmHelp:"Sube un MP4, WebM, GIF o WebP corto (máx. 650 KB) o pega un enlace https de tu nube para archivos más grandes. Se usa como fondo del juego.",tmUrlPh:"o enlace directo https://... (opcional)",tmAdd:"Agregar tema",tmNeed:"Elige un archivo o pega un enlace https.",tmBig:"El archivo pesa más de 650 KB. Comprímelo o súbelo a una nube y pega el enlace.",tmType:"Formato no permitido (usa MP4, WebM, GIF, WebP, PNG o JPG).",tmUrlBad:"El enlace debe empezar con https://",tmAdded:"¡Tema agregado!",tmDeleted:"Tema borrado.",tmEmpty:"Aún no hay temas"});
+Object.assign(T.en,{tTema:"Theme",tmTitle:"Animated backgrounds",tmHelp:"Upload a short MP4, WebM, GIF or WebP (max 650 KB) or paste an https link from your cloud for bigger files. It is used as the game background.",tmUrlPh:"or direct link https://... (optional)",tmAdd:"Add theme",tmNeed:"Pick a file or paste an https link.",tmBig:"The file is over 650 KB. Compress it or upload it to a cloud and paste the link.",tmType:"Format not allowed (use MP4, WebM, GIF, WebP, PNG or JPG).",tmUrlBad:"The link must start with https://",tmAdded:"Theme added!",tmDeleted:"Theme deleted.",tmEmpty:"No themes yet"});
+Object.assign(T.ar,{tTema:"سمة",tmTitle:"خلفيات متحركة",tmHelp:"ارفع MP4 أو WebM أو GIF أو WebP قصيراً (حتى 650 كيلوبايت) أو الصق رابط https من سحابتك للملفات الأكبر. يُستخدم كخلفية للعبة.",tmUrlPh:"أو رابط مباشر https://... (اختياري)",tmAdd:"إضافة سمة",tmNeed:"اختر ملفاً أو الصق رابط https.",tmBig:"الملف أكبر من 650 كيلوبايت. اضغطه أو ارفعه إلى سحابة والصق الرابط.",tmType:"صيغة غير مسموحة (استخدم MP4 أو WebM أو GIF أو WebP أو PNG أو JPG).",tmUrlBad:"يجب أن يبدأ الرابط بـ https://",tmAdded:"تمت إضافة السمة!",tmDeleted:"تم حذف السمة.",tmEmpty:"لا توجد سمات بعد"});
+Object.assign(T.es,{tmHelp:"Puedes subir un video para celular (vertical) y otro para PC (horizontal). Si subes solo uno, se usa en los dos. Archivos: MP4, WebM, GIF o WebP, máx. 650 KB entre ambos; con enlace https de tu nube no hay límite.",tmPhone:"Celular (vertical 9:16)",tmPc:"PC (horizontal 16:9)",tmM:"Celular",tmP:"PC"});
+Object.assign(T.en,{tmHelp:"You can upload one video for phones (vertical) and another for PC (horizontal). If you upload only one, it is used for both. Files: MP4, WebM, GIF or WebP, max 650 KB combined; with an https cloud link there is no limit.",tmPhone:"Phone (vertical 9:16)",tmPc:"PC (horizontal 16:9)",tmM:"Phone",tmP:"PC"});
+Object.assign(T.ar,{tmHelp:"يمكنك رفع فيديو للهاتف (عمودي) وآخر للكمبيوتر (أفقي). إذا رفعت واحداً فقط يُستخدم للاثنين. الملفات: MP4 أو WebM أو GIF أو WebP، حتى 650 كيلوبايت مجتمعة؛ ومع رابط https من سحابتك لا يوجد حد.",tmPhone:"الهاتف (عمودي 9:16)",tmPc:"الكمبيوتر (أفقي 16:9)",tmM:"هاتف",tmP:"كمبيوتر"});
+Object.assign(T.es,{tMini:"Minijuegos",mnTitle:"Nuevo minijuego",mnEditing:"Editar minijuego",mnHelp:"Cada juego tiene su propia portada y su enlace. La lista del menú de Minijuegos se actualiza sola.",mnEs:"Nombre en español",mnCoverHelp:"Portada (PNG o JPG; se reduce de tamaño antes de guardar)",mnLink:"Enlace o archivo del juego",mnLinkPh:"verdad-o-reto.html",mnAdd:"Agregar juego",mnSave:"Guardar cambios",mnCancel:"Cancelar edición",mnList:"Juegos del menú",mnEmpty:"Aún no hay juegos. Mientras tanto el menú muestra Verdad o Reto.",mnNeedName:"Escribe el nombre en español.",mnNeedCover:"Sube una portada PNG o JPG.",mnLinkBad:"Enlace no válido. Usa un archivo (ej. verdad-o-reto.html) o un enlace que empiece con https://",mnAdded:"¡Juego agregado!",mnUpdated:"¡Juego actualizado!",mnDeleted:"Juego borrado.",mnConfirm:"¿Borrar este juego del menú?",mnEdit:"Editar",mnUp:"Subir",mnDown:"Bajar",notAdmin:"Esta cuenta no es de administrador. Inicia sesión con la cuenta de administrador."});
+Object.assign(T.en,{tMini:"Mini games",mnTitle:"New mini game",mnEditing:"Edit mini game",mnHelp:"Each game has its own cover and link. The Mini Games menu list updates by itself.",mnEs:"Name in Spanish",mnCoverHelp:"Cover (PNG or JPG; it is resized before saving)",mnLink:"Game link or file",mnLinkPh:"verdad-o-reto.html",mnAdd:"Add game",mnSave:"Save changes",mnCancel:"Cancel editing",mnList:"Menu games",mnEmpty:"No games yet. Meanwhile the menu shows Truth or Dare.",mnNeedName:"Type the name in Spanish.",mnNeedCover:"Upload a PNG or JPG cover.",mnLinkBad:"Invalid link. Use a file (e.g. verdad-o-reto.html) or a link starting with https://",mnAdded:"Game added!",mnUpdated:"Game updated!",mnDeleted:"Game deleted.",mnConfirm:"Delete this game from the menu?",mnEdit:"Edit",mnUp:"Move up",mnDown:"Move down",notAdmin:"This account is not an administrator. Log in with the administrator account."});
+Object.assign(T.ar,{tMini:"ألعاب صغيرة",mnTitle:"لعبة صغيرة جديدة",mnEditing:"تعديل اللعبة",mnHelp:"لكل لعبة غلافها ورابطها. تتحدّث قائمة الألعاب الصغيرة تلقائياً.",mnEs:"الاسم بالإسبانية",mnCoverHelp:"الغلاف (PNG أو JPG؛ يُصغَّر قبل الحفظ)",mnLink:"رابط اللعبة أو ملفها",mnLinkPh:"verdad-o-reto.html",mnAdd:"إضافة لعبة",mnSave:"حفظ التغييرات",mnCancel:"إلغاء التعديل",mnList:"ألعاب القائمة",mnEmpty:"لا توجد ألعاب بعد. حتى ذلك الحين تعرض القائمة حقيقة أو جرأة.",mnNeedName:"اكتب الاسم بالإسبانية.",mnNeedCover:"ارفع غلاف PNG أو JPG.",mnLinkBad:"رابط غير صالح. استخدم ملفاً (مثل verdad-o-reto.html) أو رابطاً يبدأ بـ https://",mnAdded:"تمت إضافة اللعبة!",mnUpdated:"تم تحديث اللعبة!",mnDeleted:"تم حذف اللعبة.",mnConfirm:"حذف هذه اللعبة من القائمة؟",mnEdit:"تعديل",mnUp:"أعلى",mnDown:"أسفل",notAdmin:"هذا الحساب ليس حساب مسؤول. سجّل الدخول بحساب المسؤول."});
+const ADMIN_EMAIL="adhlyrics@gmail.com";
+const $ = s => document.querySelector(s);
+const LANGS=["es","en","ar"];
+let lang="es", docs=[], msgKey=null, msgKind="";
+try{
+  const saved=localStorage.getItem("vor-lang"), nav=(navigator.language||"es").slice(0,2).toLowerCase();
+  lang=LANGS.includes(saved)?saved:(LANGS.includes(nav)?nav:"es");
+}catch(e){}
+const t=k=>(T[lang]&&T[lang][k])||T.es[k]||k;
+
+function setMsg(key,kind){ msgKey=key; msgKind=kind||""; const m=$("#msg"); m.textContent=key?t(key):""; m.className="msg "+msgKind; }
+function applyLang(){
+  document.documentElement.lang=lang; document.documentElement.dir=lang==="ar"?"rtl":"ltr";
+  document.querySelectorAll("[data-i]").forEach(e=>e.textContent=t(e.dataset.i));
+  document.querySelectorAll("[data-ph]").forEach(e=>e.placeholder=t(e.dataset.ph));
+  document.querySelectorAll(".langs button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.l===lang));
+  if(msgKey) setMsg(msgKey,msgKind);
+  renderList(); renderStks(); renderChars(); renderTemas(); renderMinis();
+}
+document.querySelectorAll(".langs button").forEach(b=>b.onclick=()=>{
+  lang=b.dataset.l; try{localStorage.setItem("vor-lang",lang);}catch(e){} applyLang();
+});
+
+/* ===== Navegación: Juegos / Configuración ===== */
+let tab="juegos", sec=null;
+function nav(){
+  $("#vJuegos").classList.toggle("hidden",!(tab==="juegos"&&!sec));
+  $("#vConfig").classList.toggle("hidden",!(tab==="config"&&!sec));
+  $("#sVor").classList.toggle("hidden",sec!=="vor");
+  $("#sStk").classList.toggle("hidden",sec!=="stk");
+  $("#sChar").classList.toggle("hidden",sec!=="char");
+  $("#sTema").classList.toggle("hidden",sec!=="tema");
+  $("#sMini").classList.toggle("hidden",sec!=="mini");
+  document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tab===tab));
+}
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{ tab=b.dataset.tab; sec=null; nav(); });
+document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{ sec=b.dataset.go; nav(); });
+document.querySelectorAll(".back").forEach(b=>b.onclick=()=>{ sec=null; nav(); });
+
+/* ===== Autenticación ===== */
+$("#bLogin").onclick=async()=>{
+  const e=$("#email").value.trim(), p=$("#pass").value;
+  if(!e||!p){ setMsg("fill","err"); return; }
+  try{ await signInWithEmailAndPassword(auth,e,p); setMsg(null); }
+  catch(err){
+    const c=err.code||"";
+    setMsg(/invalid|wrong|user-not-found|credential/.test(c)?"errLogin":c.includes("network")?"errNet":c.includes("too-many")?"errMany":"errGen","err");
+  }
+};
+$("#bOut").onclick=()=>signOut(auth).catch(()=>setMsg("errGen","err"));
+
+let unsub=null, unsubS=null, unsubG=null, unsubC=null, unsubT=null, unsubM=null;
+onAuthStateChanged(auth,u=>{
+  const user=(u&&u.email&&u.email.toLowerCase()===ADMIN_EMAIL)?u:null; // solo el administrador ve el panel
+  $("#login").classList.toggle("hidden",!!user);
+  $("#panel").classList.toggle("hidden",!user);
+  if(u&&!user) setMsg("notAdmin","err");
+  if(unsub){ unsub(); unsub=null; }
+  if(unsubS){ unsubS(); unsubS=null; }
+  if(unsubG){ unsubG(); unsubG=null; }
+  if(unsubC){ unsubC(); unsubC=null; }
+  if(unsubT){ unsubT(); unsubT=null; }
+  if(unsubM){ unsubM(); unsubM=null; }
+  if(user){
+    // Lista en tiempo real con onSnapshot
+    unsub=onSnapshot(collection(db,"preguntas"),snap=>{
+      docs=snap.docs.map(d=>({id:d.id,...d.data()})); renderList();
+    },err=>setMsg(err.code==="permission-denied"?"errPerm":"errNet","err"));
+    unsubS=onSnapshot(collection(db,"stickers"),snap=>{
+      stks=snap.docs.map(d=>({id:d.id,...d.data()})).filter(s=>typeof s.data==="string").sort((a,b)=>(a.ts||0)-(b.ts||0)); renderStks();
+    },err=>setMsg(err.code==="permission-denied"?"errPerm":"errNet","err"));
+    unsubG=onSnapshot(collection(db,"generos"),snap=>{
+      gens=snap.docs.map(d=>({id:d.id,...d.data()})).filter(g=>typeof g.name==="string").sort((a,b)=>(a.ts||0)-(b.ts||0)); renderStks();
+    },err=>setMsg(err.code==="permission-denied"?"errPerm":"errNet","err"));
+    unsubC=onSnapshot(collection(db,"personajes"),snap=>{
+      pdocs=snap.docs.map(d=>({id:d.id,...d.data()})).filter(d=>d.type==="cat"||typeof d.data==="string").sort((a,b)=>(a.ts||0)-(b.ts||0)); renderChars();
+    },err=>setMsg(err.code==="permission-denied"?"errPerm":"errNet","err"));
+    unsubT=onSnapshot(collection(db,"temas"),snap=>{
+      temas=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>typeof x.src==="string"||typeof x.srcPc==="string").sort((a,b)=>(a.ts||0)-(b.ts||0)); renderTemas();
+    },err=>setMsg(err.code==="permission-denied"?"errPerm":"errNet","err"));
+    unsubM=onSnapshot(collection(db,"minijuegos"),snap=>{
+      minis=snap.docs.map(d=>({id:d.id,...d.data()})).filter(m=>linkOk(m.link)&&mnName(m)).sort(mnSort); renderMinis();
+    },err=>setMsg(err.code==="permission-denied"?"errPerm":"errNet","err"));
+  } else { minis=[]; mnReset(); renderMinis(); temas=[]; renderTemas(); pdocs=[]; selCat=null; renderChars(); docs=[]; stks=[]; gens=[]; selGen=null; sec=null; tab="juegos"; nav(); renderList(); renderStks(); }
+});
+
+/* ===== Traducción automática (MyMemory, gratis y sin clave) ===== */
+const edited={en:false,ar:false}; // true si la persona escribió/cambió ese campo a mano
+let trTimer=null;
+async function tr(text,to){
+  if(text.length>450) throw new Error("largo");
+  const r=await fetch("https://api.mymemory.translated.net/get?q="+encodeURIComponent(text)+"&langpair=es|"+to);
+  const j=await r.json();
+  const out=j&&j.responseData&&j.responseData.translatedText;
+  if(!out||Number(j.responseStatus)!==200) throw new Error("tr");
+  const d=document.createElement("textarea"); d.innerHTML=out; return d.value; // decodifica &#39; etc.
+}
+/* Rellena inglés y árabe; con force=true también pisa lo editado a mano */
+async function autoTranslate(force){
+  const es=$("#qEs").value.trim(); if(!es) return false;
+  const todo=[["en","#qEn"],["ar","#qAr"]].filter(([l])=>force||!edited[l]);
+  if(!todo.length) return true;
+  setMsg("translating");
+  try{
+    const res=await Promise.all(todo.map(([l])=>tr(es,l)));
+    todo.forEach(([l,sel],i)=>{ $(sel).value=res[i]; edited[l]=false; });
+    setMsg("translated","good"); return true;
+  }catch(e){ console.warn(e); setMsg("transFail","err"); return false; }
+}
+$("#qEn").addEventListener("input",()=>edited.en=true);
+$("#qAr").addEventListener("input",()=>edited.ar=true);
+// al dejar de escribir en español, traduce solo
+$("#qEs").addEventListener("input",()=>{ clearTimeout(trTimer); trTimer=setTimeout(()=>autoTranslate(false),1000); });
+$("#bTr").onclick=()=>autoTranslate(true);
+
+/* ===== Agregar y borrar ===== */
+$("#bAdd").onclick=async()=>{
+  clearTimeout(trTimer);
+  if(!$("#qEs").value.trim()){ setMsg("needEs","err"); return; }
+  let ok=true;
+  if(!$("#qEn").value.trim()||!$("#qAr").value.trim()){ edited.en=edited.en&&!!$("#qEn").value.trim(); edited.ar=edited.ar&&!!$("#qAr").value.trim(); ok=await autoTranslate(false); }
+  const es=$("#qEs").value.trim(), en=$("#qEn").value.trim(), ar=$("#qAr").value.trim();
+  try{
+    await addDoc(collection(db,"preguntas"),{tipo:$("#qTipo").value,es,en,ar});
+    ["#qEs","#qEn","#qAr"].forEach(s=>$(s).value=""); edited.en=edited.ar=false;
+    setMsg(ok||(en&&ar)?"added":"addedNoTr",ok||(en&&ar)?"good":"err");
+  }catch(err){ setMsg(err.code==="permission-denied"?"errPerm":"errGen","err"); }
+};
+async function borrar(id){
+  try{ await deleteDoc(doc(db,"preguntas",id)); setMsg("deleted","good"); }
+  catch(err){ setMsg(err.code==="permission-denied"?"errPerm":"errGen","err"); }
+}
+
+/* ===== Lista separada por tipo ===== */
+function renderList(){
+  [["verdad","#lV"],["reto","#lR"]].forEach(([tipo,sel])=>{
+    const box=$(sel); box.innerHTML="";
+    const items=docs.filter(d=>d.tipo===tipo);
+    if(!items.length){ const e=document.createElement("div"); e.className="msg"; e.textContent=t("empty"); box.appendChild(e); return; }
+    items.forEach(d=>{
+      const row=document.createElement("div"); row.className="item";
+      const tx=document.createElement("span"); tx.className="tx"; tx.textContent=d.es||"";
+      const fl=document.createElement("span"); fl.className="flags";
+      [["ES",d.es],["EN",d.en],["AR",d.ar]].forEach(([n,v])=>{ if(v){ const i=document.createElement("i"); i.textContent=n; fl.appendChild(i); } });
+      tx.appendChild(fl);
+      const b=document.createElement("button"); b.className="btn del"; b.textContent=t("del"); b.onclick=()=>borrar(d.id);
+      row.append(tx,b); box.appendChild(row);
+    });
+  });
+}
+/* ===== Stickers (PNG/JPG) compartidos por todas las salas: colección "stickers" ===== */
+let stks=[], stkData=null;
+function readStk(file,m0){
+  return new Promise((res,rej)=>{
+    const url=URL.createObjectURL(file), im=new Image();
+    im.onload=()=>{
+      URL.revokeObjectURL(url);
+      const png=file.type==="image/png"; let max=m0||256;
+      const mk=m=>{ const k=Math.min(1,m/Math.max(im.width,im.height)), c=document.createElement("canvas");
+        c.width=Math.max(1,Math.round(im.width*k)); c.height=Math.max(1,Math.round(im.height*k));
+        const x=c.getContext("2d"); if(!png){ x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); } /* el PNG conserva la transparencia */
+        x.drawImage(im,0,0,c.width,c.height); return png?c.toDataURL("image/png"):c.toDataURL("image/jpeg",.88); };
+      let d=mk(max); while(d.length>600000&&max>64){ max=Math.round(max*.75); d=mk(max); }
+      d.length>800000?rej(new Error("big")):res(d);
+    };
+    im.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error("img")); };
+    im.src=url;
+  });
+}
+$("#stkFile").addEventListener("change",async e=>{
+  const f=e.target.files[0]; stkData=null; $("#stkPrev").classList.add("hidden"); if(!f) return;
+  if(f.type!=="image/png"&&f.type!=="image/jpeg"){ e.target.value=""; setMsg("stkType","err"); return; }
+  try{ stkData=await readStk(f); $("#stkPrev").src=stkData; $("#stkPrev").classList.remove("hidden"); setMsg(null); }
+  catch(err){ e.target.value=""; setMsg(err.message==="big"?"stkBig":"errGen","err"); }
+});
+$("#bAddStk").onclick=async()=>{
+  if(!selGen||selGen==="sin"){ setMsg("genPick","err"); return; }
+  if(!stkData){ setMsg("stkNeed","err"); return; }
+  try{
+    await addDoc(collection(db,"stickers"),{name:$("#stkName").value.trim().slice(0,20),data:stkData,gen:selGen,ts:Date.now()});
+    stkData=null; $("#stkFile").value=""; $("#stkName").value=""; $("#stkPrev").classList.add("hidden"); setMsg("stkAdded","good");
+  }catch(err){ setMsg(err.code==="permission-denied"?"errPerm":"errGen","err"); }
+};
+async function borrarStk(id){
+  try{ await deleteDoc(doc(db,"stickers",id)); setMsg("stkDeleted","good"); }
+  catch(err){ setMsg(err.code==="permission-denied"?"errPerm":"errGen","err"); }
+}
+let gens=[], selGen=null;
+const genStks=id=>stks.filter(s=>id==="sin"?!gens.some(g=>g.id===s.gen):s.gen===id);
+function emptyMsg(key){ const e=document.createElement("div"); e.className="msg"; e.style.gridColumn="1/-1"; e.textContent=t(key); return e; }
+function renderStks(){
+  const list=gens.slice(); if(genStks("sin").length) list.push({id:"sin",name:t("noGen")});
+  if(selGen&&!list.some(g=>g.id===selGen)) selGen=null;
+  const grid=$("#gGrid"); grid.textContent="";
+  if(!list.length) grid.appendChild(emptyMsg("genEmpty"));
+  list.forEach(g=>{
+    const b=document.createElement("button"); b.className="tile sm"; b.setAttribute("aria-pressed",g.id===selGen);
+    const n=document.createElement("span"); n.textContent=g.name; const c=document.createElement("small"); c.textContent=genStks(g.id).length;
+    b.append(n,c); b.onclick=()=>{ selGen=g.id; renderStks(); }; grid.appendChild(b);
+  });
+  $("#genPanel").classList.toggle("hidden",!selGen);
+  if(!selGen) return;
+  $("#genHead").textContent=list.find(g=>g.id===selGen).name;
+  $("#upForm").classList.toggle("hidden",selGen==="sin"); $("#bDelGen").classList.toggle("hidden",selGen==="sin");
+  const box=$("#lS"); box.textContent=""; const items=genStks(selGen);
+  if(!items.length){ box.appendChild(emptyMsg("stkEmpty")); return; }
+  items.forEach(s=>{
+    const c=document.createElement("div"); c.className="stkcard";
+    const im=new Image(); im.src=s.data; im.alt=s.name||"";
+    const nm=document.createElement("span"); nm.textContent=s.name||"";
+    const b=document.createElement("button"); b.className="btn del"; b.textContent=t("del"); b.onclick=()=>borrarStk(s.id);
+    c.append(im,nm,b); box.appendChild(c);
+  });
+}
+$("#bAddGen").onclick=async()=>{
+  const n=$("#genName").value.trim().slice(0,24); if(!n){ setMsg("genNeed","err"); return; }
+  try{ const r=await addDoc(collection(db,"generos"),{name:n,ts:Date.now()}); $("#genName").value=""; selGen=r.id; renderStks(); setMsg("genAdded","good"); }
+  catch(err){ setMsg(err.code==="permission-denied"?"errPerm":"errGen","err"); }
+};
+$("#bDelGen").onclick=async()=>{
+  if(!selGen||selGen==="sin"||!confirm(t("genConfirm"))) return;
+  try{ for(const s of genStks(selGen)) await deleteDoc(doc(db,"stickers",s.id)); await deleteDoc(doc(db,"generos",selGen)); selGen=null; setMsg("genDeleted","good"); }
+  catch(err){ setMsg(err.code==="permission-denied"?"errPerm":"errGen","err"); }
+};
+
+/* ===== Personajes (PNG) por categoría. Colección "personajes":
+   categoría = {type:"cat", name, data:portada}; chica/chico son categorías fijas (ids "chica" y "chico").
+   personaje = {name, data, cat:idCategoría} ===== */
+let pdocs=[], selCat=null, chData=null, cvData=null;
+const FIXED=["chica","chico"];
+const cats=()=>FIXED.map(id=>pdocs.find(d=>d.id===id&&d.type==="cat")||{id,type:"cat",data:""}).concat(pdocs.filter(d=>d.type==="cat"&&!FIXED.includes(d.id)));
+const catLabel=k=>k.id==="chica"?t("girl"):k.id==="chico"?t("boy"):(k.name||"");
+const catPjs=id=>pdocs.filter(d=>d.type!=="cat"&&(id==="sin"?!cats().some(k=>k.id===d.cat):d.cat===id));
+const pngPick=(inp,prev,setter)=>inp.addEventListener("change",async e=>{
+  const f=e.target.files[0]; setter(null); prev.classList.add("hidden"); if(!f) return;
+  if(f.type!=="image/png"){ e.target.value=""; setMsg("charType","err"); return; }
+  try{ const d=await readStk(f); setter(d); prev.src=d; prev.classList.remove("hidden"); setMsg(null); }
+  catch(err){ e.target.value=""; setMsg(err.message==="big"?"stkBig":"errGen","err"); }
+});
+pngPick($("#chFile"),$("#chPrev"),v=>chData=v);
+pngPick($("#cvFile"),$("#cvPrev"),v=>cvData=v);
+const permErr=err=>setMsg(err.code==="permission-denied"?"errPerm":"errGen","err");
+$("#bAddCat").onclick=async()=>{
+  const n=$("#catName").value.trim().slice(0,20); if(!n){ setMsg("catNeed","err"); return; }
+  try{
+    const names={es:n,en:n,ar:n};
+    try{ const [en,ar]=await Promise.all([tr(n,"en"),tr(n,"ar")]); names.en=String(en).slice(0,20)||n; names.ar=String(ar).slice(0,20)||n; }catch(e){ console.warn("Sin traducción automática:",e); }
+    const r=await addDoc(collection(db,"personajes"),{type:"cat",name:n,names,data:"",ts:Date.now()}); $("#catName").value=""; selCat=r.id; renderChars(); }
+  catch(err){ permErr(err); }
+};
+$("#bCover").onclick=async()=>{
+  if(!cvData){ setMsg("coverNeed","err"); return; }
+  try{ await setDoc(doc(db,"personajes",selCat),{type:"cat",data:cvData,ts:Date.now()},{merge:true}); cvData=null; $("#cvFile").value=""; $("#cvPrev").classList.add("hidden"); setMsg("coverSaved","good"); }
+  catch(err){ permErr(err); }
+};
+$("#bAddCh").onclick=async()=>{
+  if(!selCat||selCat==="sin"||!chData){ setMsg(chData?"genPick":"charNeed","err"); return; }
+  try{
+    await addDoc(collection(db,"personajes"),{name:$("#chName").value.trim().slice(0,20),data:chData,cat:selCat,ts:Date.now()});
+    chData=null; $("#chFile").value=""; $("#chName").value=""; $("#chPrev").classList.add("hidden"); setMsg("charAdded","good");
+  }catch(err){ permErr(err); }
+};
+$("#bDelCat").onclick=async()=>{
+  if(!selCat||selCat==="sin"||FIXED.includes(selCat)||!confirm(t("catConfirm"))) return;
+  try{ for(const c of catPjs(selCat)) await deleteDoc(doc(db,"personajes",c.id)); await deleteDoc(doc(db,"personajes",selCat)); selCat=null; setMsg("charDeleted","good"); }
+  catch(err){ permErr(err); }
+};
+function renderChars(){
+  const list=cats(); if(catPjs("sin").length) list.push({id:"sin",type:"cat",data:"",name:t("noCat")});
+  if(selCat&&!list.some(k=>k.id===selCat)) selCat=null;
+  const grid=$("#cGrid"); grid.textContent="";
+  list.forEach(k=>{
+    const b=document.createElement("button"); b.className="tile sm"; b.setAttribute("aria-pressed",k.id===selCat);
+    if(typeof k.data==="string"&&k.data){ const im=new Image(); im.src=k.data; im.alt=""; im.style.cssText="width:48px;height:48px;object-fit:contain"; b.appendChild(im); }
+    const n=document.createElement("span"); n.textContent=k.id==="sin"?k.name:catLabel(k); const c=document.createElement("small"); c.textContent=catPjs(k.id).length;
+    b.append(n,c); b.onclick=()=>{ selCat=k.id; renderChars(); }; grid.appendChild(b);
+  });
+  $("#catPanel").classList.toggle("hidden",!selCat);
+  if(!selCat) return;
+  const cur=list.find(k=>k.id===selCat), isSin=selCat==="sin";
+  $("#catHead").textContent=isSin?cur.name:catLabel(cur);
+  $("#cvForm").classList.toggle("hidden",isSin); $("#chForm").classList.toggle("hidden",isSin);
+  $("#bDelCat").classList.toggle("hidden",isSin||FIXED.includes(selCat));
+  const box=$("#lC"); box.textContent=""; const items=catPjs(selCat);
+  if(!items.length){ box.appendChild(emptyMsg("charEmpty")); return; }
+  items.forEach(c=>{
+    const k=document.createElement("div"); k.className="stkcard";
+    const im=new Image(); im.src=c.data; im.alt=c.name||"";
+    const nm=document.createElement("span"); nm.textContent=c.name||"";
+    k.append(im,nm);
+    if(isSin){ const sel=document.createElement("select"); const o0=new Option(t("moveTo"),""); sel.appendChild(o0);
+      cats().forEach(x=>sel.appendChild(new Option(catLabel(x),x.id)));
+      sel.onchange=async()=>{ if(!sel.value) return; try{ await updateDoc(doc(db,"personajes",c.id),{cat:sel.value}); }catch(err){ permErr(err); } }; k.appendChild(sel); }
+    const b=document.createElement("button"); b.className="btn del"; b.textContent=t("del");
+    b.onclick=async()=>{ try{ await deleteDoc(doc(db,"personajes",c.id)); setMsg("charDeleted","good"); }catch(err){ permErr(err); } };
+    k.appendChild(b); box.appendChild(k);
+  });
+}
+/* ===== Temas: fondos animados. Colección "temas": {name, ts, src+kind = celular (o ambos), srcPc+kindPc = PC}.
+   src/srcPc = url https o data: ===== */
+let temas=[]; const slots={m:{src:null,size:0},p:{src:null,size:0}};
+const TM_MAX=650000; // bytes entre ambos archivos: un documento de Firestore admite 1 MiB y base64 pesa ~33% más
+const VIDEXT=/\.(mp4|webm|ogv|m4v)(\?|#|$)/i, TM_TYPE=/^(video\/(mp4|webm)|image\/(gif|webp|png|jpeg))$/;
+const tmKind=u=>(/^data:video\//.test(u)||VIDEXT.test(u))?"video":"image";
+function tmEl(src,kind){
+  let e;
+  if(kind==="video"){ e=document.createElement("video"); e.muted=true; e.loop=true; e.autoplay=true; e.playsInline=true; e.src=src; e.play&&e.play().catch(()=>{}); }
+  else { e=new Image(); e.alt=""; e.src=src; }
+  e.style.cssText="display:block;width:100%;height:100%;object-fit:cover"; return e;
+}
+const slotEl=k=>document.querySelector('.tmslot[data-s="'+k+'"]');
+function clearSlot(k){ const el=slotEl(k), pv=el.querySelector(".tmp"); slots[k]={src:null,size:0}; pv.classList.add("hidden"); pv.textContent=""; }
+document.querySelectorAll(".tmslot").forEach(el=>{
+  const k=el.dataset.s, f=el.querySelector(".tmf"), pv=el.querySelector(".tmp");
+  f.addEventListener("change",()=>{
+    const file=f.files[0]; clearSlot(k); if(!file) return;
+    if(!TM_TYPE.test(file.type)){ f.value=""; setMsg("tmType","err"); return; }
+    if(file.size+slots[k==="m"?"p":"m"].size>TM_MAX){ f.value=""; setMsg("tmBig","err"); return; }
+    slots[k].size=file.size;
+    const r=new FileReader();
+    r.onload=()=>{ slots[k].src=r.result; pv.appendChild(tmEl(r.result,tmKind(r.result))); pv.classList.remove("hidden"); setMsg(null); };
+    r.onerror=()=>{ clearSlot(k); f.value=""; setMsg("errGen","err"); }; r.readAsDataURL(file);
+  });
+});
+function slotSrc(k){
+  const url=slotEl(k).querySelector(".tmu").value.trim();
+  if(slots[k].src) return slots[k].src;
+  if(!url) return null;
+  if(!/^https:\/\//i.test(url)) throw new Error("bad");
+  return url;
+}
+$("#bAddTm").onclick=async()=>{
+  let m,pc; try{ m=slotSrc("m"); pc=slotSrc("p"); }catch(e){ setMsg("tmUrlBad","err"); return; }
+  if(!m&&!pc){ setMsg("tmNeed","err"); return; }
+  const d={name:$("#tmName").value.trim().slice(0,20),ts:Date.now()};
+  if(m){ d.src=m; d.kind=tmKind(m); } if(pc){ d.srcPc=pc; d.kindPc=tmKind(pc); }
+  try{
+    await addDoc(collection(db,"temas"),d);
+    $("#tmName").value=""; ["m","p"].forEach(k=>{ const el=slotEl(k); el.querySelector(".tmf").value=""; el.querySelector(".tmu").value=""; clearSlot(k); });
+    setMsg("tmAdded","good");
+  }catch(err){ permErr(err); }
+};
+function renderTemas(){
+  const box=$("#lT"); box.textContent="";
+  if(!temas.length){ box.appendChild(emptyMsg("tmEmpty")); return; }
+  temas.forEach(x=>{
+    const k=document.createElement("div"); k.className="stkcard";
+    const row=document.createElement("div"); row.style.cssText="display:flex;gap:6px;width:100%";
+    [["tmM",x.src,x.kind],["tmP",x.srcPc,x.kindPc]].forEach(([lb,src,kind])=>{ if(typeof src!=="string") return;
+      const c=document.createElement("div"); c.style.cssText="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px";
+      const w=document.createElement("div"); w.style.cssText="aspect-ratio:1;background:#000;overflow:hidden;border:2px solid var(--ink)"; w.appendChild(tmEl(src,kind==="video"?"video":"image"));
+      const l=document.createElement("span"); l.textContent=t(lb); c.append(w,l); row.appendChild(c); });
+    const nm=document.createElement("span"); nm.textContent=x.name||"";
+    const b=document.createElement("button"); b.className="btn del"; b.textContent=t("del");
+    b.onclick=async()=>{ try{ await deleteDoc(doc(db,"temas",x.id)); setMsg("tmDeleted","good"); }catch(err){ permErr(err); } };
+    k.append(row,nm,b); box.appendChild(k);
+  });
+}
+/* ===== Minijuegos: colección "minijuegos" {names:{es,en,ar}, name, cover, link, order, ts}.
+   El menú (minijuegos.html) lee esta colección; cada juego guarda su propia portada. ===== */
+let minis=[], editId=null, mnCover=null;
+const MN_IMG=/^data:image\/(jpeg|png);base64,[A-Za-z0-9+\/=]+$/;
+const linkOk=u=>typeof u==="string"&&u.length<=300&&(/^https:\/\/[^\s"'<>]+$/i.test(u)||(/^[A-Za-z0-9_\-][A-Za-z0-9_\-\/.]*(\?[A-Za-z0-9_\-=&%.]*)?$/.test(u)&&!u.includes("..")));
+const mnName=m=>{ const n=m&&m.names; const v=(n&&typeof n==="object"&&(n[lang]||n.es))||(m&&m.name)||""; return typeof v==="string"?v.slice(0,40):""; };
+const mnSort=(x,y)=>((Number.isFinite(x.order)?x.order:1e9)-(Number.isFinite(y.order)?y.order:1e9))||((x.ts||0)-(y.ts||0));
+function mnForm(){
+  $("#bMnSave").dataset.i=editId?"mnSave":"mnAdd"; $("#bMnSave").textContent=t(editId?"mnSave":"mnAdd");
+  $("#mnHead").dataset.i=editId?"mnEditing":"mnTitle"; $("#mnHead").textContent=t(editId?"mnEditing":"mnTitle");
+  $("#bMnCancel").classList.toggle("hidden",!editId);
+}
+function mnReset(){
+  editId=null; mnCover=null; ["#mnEs","#mnEn","#mnAr","#mnLink"].forEach(x=>$(x).value=""); $("#mnFile").value="";
+  $("#mnPrev").classList.add("hidden"); mnForm();
+}
+async function mnTranslate(){
+  const es=$("#mnEs").value.trim(); if(!es){ setMsg("mnNeedName","err"); return false; }
+  setMsg("translating");
+  try{
+    const [en,ar]=await Promise.all([tr(es,"en"),tr(es,"ar")]);
+    $("#mnEn").value=String(en).slice(0,24); $("#mnAr").value=String(ar).slice(0,24); setMsg("translated","good"); return true;
+  }catch(e){ console.warn(e); setMsg("transFail","err"); return false; }
+}
+$("#bMnTr").onclick=mnTranslate;
+$("#bMnCancel").onclick=mnReset;
+$("#mnFile").addEventListener("change",async e=>{
+  const f=e.target.files[0]; mnCover=null; $("#mnPrev").classList.add("hidden"); if(!f) return;
+  if(f.type!=="image/png"&&f.type!=="image/jpeg"){ e.target.value=""; setMsg("stkType","err"); return; }
+  try{ mnCover=await readStk(f,320); $("#mnPrev").src=mnCover; $("#mnPrev").classList.remove("hidden"); setMsg(null); }
+  catch(err){ e.target.value=""; setMsg(err.message==="big"?"stkBig":"errGen","err"); }
+});
+$("#bMnSave").onclick=async()=>{
+  const es=$("#mnEs").value.trim().slice(0,24), link=$("#mnLink").value.trim();
+  if(!es){ setMsg("mnNeedName","err"); return; }
+  if(!linkOk(link)){ setMsg("mnLinkBad","err"); return; }
+  const cur=editId?minis.find(m=>m.id===editId):null;
+  const cover=mnCover||(cur&&typeof cur.cover==="string"&&MN_IMG.test(cur.cover)?cur.cover:null);
+  if(!cover){ setMsg("mnNeedCover","err"); return; }
+  if(!$("#mnEn").value.trim()||!$("#mnAr").value.trim()) await mnTranslate(); // rellena lo que falte (editable antes de guardar)
+  const names={es,en:$("#mnEn").value.trim().slice(0,24)||es,ar:$("#mnAr").value.trim().slice(0,24)||es};
+  try{
+    if(editId){ await updateDoc(doc(db,"minijuegos",editId),{names,name:es,link,cover}); setMsg("mnUpdated","good"); }
+    else{
+      const order=minis.reduce((m,x)=>Math.max(m,Number.isFinite(x.order)?x.order:-1),-1)+1;
+      await addDoc(collection(db,"minijuegos"),{names,name:es,link,cover,order,ts:Date.now()}); setMsg("mnAdded","good");
+    }
+    mnReset();
+  }catch(err){ permErr(err); }
+};
+function mnEdit(m){
+  editId=m.id; mnCover=null; $("#mnFile").value="";
+  const n=m.names&&typeof m.names==="object"?m.names:{};
+  $("#mnEs").value=String(n.es||m.name||"").slice(0,24); $("#mnEn").value=String(n.en||"").slice(0,24); $("#mnAr").value=String(n.ar||"").slice(0,24); $("#mnLink").value=m.link;
+  if(typeof m.cover==="string"&&MN_IMG.test(m.cover)){ $("#mnPrev").src=m.cover; $("#mnPrev").classList.remove("hidden"); } else $("#mnPrev").classList.add("hidden");
+  mnForm(); $("#mnEs").scrollIntoView({behavior:"smooth",block:"center"});
+}
+async function mnMove(i,d){
+  const j=i+d; if(j<0||j>=minis.length) return;
+  const a=minis.slice(); [a[i],a[j]]=[a[j],a[i]];
+  try{ const b=writeBatch(db); a.forEach((m,k)=>b.update(doc(db,"minijuegos",m.id),{order:k})); await b.commit(); }catch(err){ permErr(err); }
+}
+function renderMinis(){
+  mnForm();
+  const box=$("#lM"); box.textContent="";
+  if(!minis.length){ box.appendChild(emptyMsg("mnEmpty")); return; }
+  minis.forEach((m,i)=>{
+    const r=document.createElement("div"); r.className="mrow";
+    const im=new Image(); im.className="mthumb"; im.alt=""; if(typeof m.cover==="string"&&MN_IMG.test(m.cover)) im.src=m.cover;
+    const tx=document.createElement("div"); tx.className="tx"; tx.textContent=mnName(m);
+    const lk=document.createElement("small"); lk.textContent=m.link; tx.appendChild(lk);
+    const acts=document.createElement("div"); acts.className="acts";
+    const mk=(txt,fn,cls)=>{ const b=document.createElement("button"); b.className="btn "+(cls||"sm"); b.textContent=txt; b.onclick=fn; acts.appendChild(b); return b; };
+    mk("▲",()=>mnMove(i,-1)).setAttribute("aria-label",t("mnUp")); mk("▼",()=>mnMove(i,1)).setAttribute("aria-label",t("mnDown"));
+    if(i===0) acts.children[0].disabled=true; if(i===minis.length-1) acts.children[1].disabled=true;
+    mk(t("mnEdit"),()=>mnEdit(m));
+    mk(t("del"),async()=>{ if(!confirm(t("mnConfirm"))) return; try{ await deleteDoc(doc(db,"minijuegos",m.id)); if(editId===m.id) mnReset(); setMsg("mnDeleted","good"); }catch(err){ permErr(err); } },"del");
+    r.append(im,tx,acts); box.appendChild(r);
+  });
+}
+nav(); applyLang();
+</script>
+</body>
+</html>
